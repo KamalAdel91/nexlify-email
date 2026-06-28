@@ -25,7 +25,7 @@ app_license = "mit"
 # ------------------
 
 # include js, css files in header of desk.html
-# app_include_css = "/assets/nexlify_email/css/nexlify_email.css"
+app_include_css = "/assets/nexlify_email/css/nexlify_email.css"
 app_include_js = "/assets/nexlify_email/js/sender_override.js"
 
 # include js, css files in header of web template

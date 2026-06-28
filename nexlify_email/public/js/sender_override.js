@@ -18,6 +18,15 @@ $(document).on('app_ready', function() {
 			all_emails.push(accounts[i].email_id);
 		}
 
+		var original_make = frappe.views.CommunicationComposer.prototype.make;
+
+		frappe.views.CommunicationComposer.prototype.make = function() {
+			original_make.apply(this, arguments);
+			if (this.dialog && this.dialog.$wrapper) {
+				this.dialog.$wrapper.addClass('nexlify-email-composer');
+			}
+		};
+
 		var original_get_fields = frappe.views.CommunicationComposer.prototype.get_fields;
 
 		frappe.views.CommunicationComposer.prototype.get_fields = function() {
