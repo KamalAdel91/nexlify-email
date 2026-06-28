@@ -4,28 +4,35 @@ function injectStyles() {
 	if (document.getElementById('nexlify-email-styles')) return;
 	var style = document.createElement('style');
 	style.id = 'nexlify-email-styles';
+
 	var css = '';
-	css += '.nexlify-email-composer .form-section .row > div[class*="col-"] {';
-	css += 'flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
+
+	// Force every field column in the composer to take full width (stack vertically)
+	css += '.nexlify-email-composer .form-layout .form-column { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
+	css += '.nexlify-email-composer .form-layout .section-body > .row > [class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
+
+	// Make recipients / cc / bcc grow with content instead of fixed height
 	css += '.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .form-control,';
 	css += '.nexlify-email-composer .frappe-control[data-fieldname="cc"] .form-control,';
 	css += '.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .form-control {';
-	css += 'height: auto; min-height: 38px; overflow: visible; }';
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .form-control .tb-selected,';
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="cc"] .form-control .tb-selected,';
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .form-control .tb-selected {';
-	css += 'display: inline-flex; flex-wrap: wrap; white-space: normal; width: 100%; }';
+	css += 'height: auto !important; min-height: 38px !important; max-height: none !important; overflow: visible !important; }';
+
+	// Let the chip container wrap and show all selected emails
+	css += '.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .tb-selected,';
+	css += '.nexlify-email-composer .frappe-control[data-fieldname="cc"] .tb-selected,';
+	css += '.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .tb-selected {';
+	css += 'display: flex !important; flex-wrap: wrap !important; white-space: normal !important; width: 100% !important; height: auto !important; overflow: visible !important; }';
+
+	// Subject full width
+	css += '.nexlify-email-composer .frappe-control[data-fieldname="subject"] { width: 100% !important; }';
+
 	style.textContent = css;
 	document.head.appendChild(style);
 }
 
 $(document).on('app_ready', function() {
-	if (nexlify_email._sender_patched) {
-		return;
-	}
-	if (!frappe.views || !frappe.views.CommunicationComposer) {
-		return;
-	}
+	if (nexlify_email._sender_patched) return;
+	if (!frappe.views || !frappe.views.CommunicationComposer) return;
 	nexlify_email._sender_patched = true;
 
 	injectStyles();
