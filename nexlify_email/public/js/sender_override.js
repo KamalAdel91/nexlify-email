@@ -1,4 +1,35 @@
 frappe.provide('nexlify_email');
+
+// Inject the CSS styles directly
+function injectStyles() {
+	if (document.getElementById('nexlify-email-styles')) return;
+	var style = document.createElement('style');
+	style.id = 'nexlify-email-styles';
+	style.textContent = `
+		.nexlify-email-composer .form-section .row > div[class*="col-"] {
+			flex: 0 0 100% !important;
+			max-width: 100% !important;
+			width: 100% !important;
+		}
+		.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .form-control,
+		.nexlify-email-composer .frappe-control[data-fieldname="cc"] .form-control,
+		.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .form-control {
+			height: auto;
+			min-height: 38px;
+			overflow: visible;
+		}
+		.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .form-control .tb-selected,
+		.nexlify-email-composer .frappe-control[data-fieldname="cc"] .form-control .tb-selected,
+		.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .form-control .tb-selected {
+			display: inline-flex;
+			flex-wrap: wrap;
+			white-space: normal;
+			width: 100%;
+		}
+	`;
+	document.head.appendChild(style);
+}
+
 $(document).on('app_ready', function() {
 	if (nexlify_email._sender_patched) {
 		return;
@@ -7,6 +38,9 @@ $(document).on('app_ready', function() {
 		return;
 	}
 	nexlify_email._sender_patched = true;
+
+	// Inject styles once
+	injectStyles();
 
 	frappe.db.get_list('Email Account', {
 		filters: { enable_outgoing: 1 },
