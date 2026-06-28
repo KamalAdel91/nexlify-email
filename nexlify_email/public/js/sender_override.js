@@ -7,9 +7,9 @@ function injectStyles() {
 
 	var css = '';
 
-	// Force every field column in the composer to take full width (stack vertically)
-	css += '.nexlify-email-composer .form-layout .form-column { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
-	css += '.nexlify-email-composer .form-layout .section-body > .row > [class*="col-"] { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
+	// Force EVERY field in the composer to full width
+	css += '.nexlify-email-composer .frappe-control { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
+	css += '.nexlify-email-composer .form-section .section-body > .row { display: block !important; }';
 
 	// Make recipients / cc / bcc grow with content instead of fixed height
 	css += '.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .form-control,';
@@ -22,9 +22,6 @@ function injectStyles() {
 	css += '.nexlify-email-composer .frappe-control[data-fieldname="cc"] .tb-selected,';
 	css += '.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .tb-selected {';
 	css += 'display: flex !important; flex-wrap: wrap !important; white-space: normal !important; width: 100% !important; height: auto !important; overflow: visible !important; }';
-
-	// Subject full width
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="subject"] { width: 100% !important; }';
 
 	style.textContent = css;
 	document.head.appendChild(style);
@@ -60,6 +57,16 @@ $(document).on('app_ready', function() {
 
 		frappe.views.CommunicationComposer.prototype.get_fields = function() {
 			var fields = original_get_fields.apply(this, arguments);
+
+			// Filter out Column Break fields so every field stacks vertically
+			var clean_fields = [];
+			for (var k = 0; k < fields.length; k++) {
+				if (fields[k].fieldtype !== 'Column Break') {
+					clean_fields.push(fields[k]);
+				}
+			}
+			fields = clean_fields;
+
 			var sender = null;
 			for (var j = 0; j < fields.length; j++) {
 				if (fields[j].fieldname === 'sender') {
