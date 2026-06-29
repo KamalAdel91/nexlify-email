@@ -1,72 +1,73 @@
 frappe.provide('nexlify_email');
+console.log('nexlify_email: script loaded');
+
+
+
+
 
 function injectStyles() {
 	if (document.getElementById('nexlify-email-styles')) return;
 	var style = document.createElement('style');
 	style.id = 'nexlify-email-styles';
-
 	var css = '';
-
-	// Force EVERY field in the composer to full width
-	css += '.nexlify-email-composer .frappe-control { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
-	css += '.nexlify-email-composer .form-section .section-body > .row { display: block !important; }';
-
-	// Make recipients / cc / bcc grow with content instead of fixed height
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .form-control,';
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="cc"] .form-control,';
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .form-control {';
-	css += 'height: auto !important; min-height: 38px !important; max-height: none !important; overflow: visible !important; }';
-
-	// Let the chip container wrap and show all selected emails
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="recipients"] .tb-selected,';
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="cc"] .tb-selected,';
-	css += '.nexlify-email-composer .frappe-control[data-fieldname="bcc"] .tb-selected {';
-	css += 'display: flex !important; flex-wrap: wrap !important; white-space: normal !important; width: 100% !important; height: auto !important; overflow: visible !important; }';
-
+	css += '.nexlify-email-composer .section-body { display: block !important; }';
+	css += '.nexlify-email-composer .form-column { flex: 0 0 100% !important; max-width: 100% !important; width: 100% !important; }';
+	css += '.nexlify-email-composer .frappe-control.input-max-width { max-width: 100% !important; }';
+	css += '.nexlify-email-composer .form-section form { display: block !important; }';
+	css += '.nexlify-email-composer .frappe-control[data-fieldname="recipients"] { display: inline-block !important; width: calc(100% - 50px) !important; vertical-align: middle !important; }';
+	css += '.nexlify-email-composer .frappe-control[data-fieldname="option_toggle_button"] { display: inline-block !important; vertical-align: middle !important; width: 40px !important; }';
 	style.textContent = css;
 	document.head.appendChild(style);
 }
 
+
+
+
+
+
 $(document).on('app_ready', function() {
+	console.log('nexlify_email: app_ready fired');
 	if (nexlify_email._sender_patched) return;
-	if (!frappe.views || !frappe.views.CommunicationComposer) return;
+	if (!frappe.views || !frappe.views.CommunicationComposer) {
+		console.log('nexlify_email: CommunicationComposer not available');
+		return;
+	}
 	nexlify_email._sender_patched = true;
+	console.log('nexlify_email: patching CommunicationComposer');
 
 	injectStyles();
+
+	var original_make = frappe.views.CommunicationComposer.prototype.make;
+	console.log('nexlify_email: saved original_make', !!original_make);
+
+	frappe.views.CommunicationComposer.prototype.make = function() {
+		console.log('nexlify_email: custom make called');
+		original_make.apply(this, arguments);
+		if (this.dialog && this.dialog.$wrapper) {
+			this.dialog.$wrapper.addClass('nexlify-email-composer');
+			console.log('nexlify_email: added class to dialog');
+		} else {
+			console.log('nexlify_email: dialog or $wrapper missing after make');
+		}
+	};
 
 	frappe.db.get_list('Email Account', {
 		filters: { enable_outgoing: 1 },
 		fields: ['email_id'],
 		limit: 0
 	}).then(function(accounts) {
+		console.log('nexlify_email: got accounts', accounts.length);
 		var all_emails = [];
 		for (var i = 0; i < accounts.length; i++) {
 			all_emails.push(accounts[i].email_id);
 		}
 
-		var original_make = frappe.views.CommunicationComposer.prototype.make;
-
-		frappe.views.CommunicationComposer.prototype.make = function() {
-			original_make.apply(this, arguments);
-			if (this.dialog && this.dialog.$wrapper) {
-				this.dialog.$wrapper.addClass('nexlify-email-composer');
-			}
-		};
-
 		var original_get_fields = frappe.views.CommunicationComposer.prototype.get_fields;
+		console.log('nexlify_email: saved original_get_fields', !!original_get_fields);
 
 		frappe.views.CommunicationComposer.prototype.get_fields = function() {
 			var fields = original_get_fields.apply(this, arguments);
-
-			// Filter out Column Break fields so every field stacks vertically
-			var clean_fields = [];
-			for (var k = 0; k < fields.length; k++) {
-				if (fields[k].fieldtype !== 'Column Break') {
-					clean_fields.push(fields[k]);
-				}
-			}
-			fields = clean_fields;
-
+			console.log('nexlify_email: get_fields called, fields count', fields.length);
 			var sender = null;
 			for (var j = 0; j < fields.length; j++) {
 				if (fields[j].fieldname === 'sender') {
@@ -76,6 +77,7 @@ $(document).on('app_ready', function() {
 			}
 			if (sender) {
 				sender.options = all_emails;
+				console.log('nexlify_email: patched existing sender field');
 			} else {
 				this.user_email_accounts = all_emails;
 				fields.unshift({
@@ -86,6 +88,7 @@ $(document).on('app_ready', function() {
 					options: all_emails,
 					default: all_emails[0]
 				});
+				console.log('nexlify_email: added From field');
 			}
 			return fields;
 		};
